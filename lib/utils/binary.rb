@@ -39,6 +39,11 @@ module EllipticCurve
             def self.bitsFromHex(hexadecimal)
                 return intFromHex(hexadecimal).to_s(2).rjust(hexadecimal.length * 4, "0")
             end
+
+            def self.hex2bytes(hexstr)
+                hexstr = hexstr[2..-1] if hexstr.start_with?("0x")
+                hexstr.scan(/../).map(&:hex).pack("C*")
+            end
         end
     end
 end

@@ -1,17 +1,21 @@
 require 'digest'
-
+require_relative './hmac_drbg'
 
 module EllipticCurve
     module Ecdsa
         def self.sign(message, privateKey, hashfunc=nil)
-            if hashfunc.nil? then hashfunc = lambda{ |x| Digest::SHA256.digest(x) } end            
+            if hashfunc.nil? then hashfunc = lambda{ |x| Digest::SHA256.digest(x) } end
             byteMessage = hashfunc.call(message)
             numberMessage = Utils::Binary.numberFromByteString(byteMessage)
             curve = privateKey.curve
-
+            n_bytes = curve.n.bit_length / 8
+            puts n_bytes
+            a=Utils::Binary.hex2bytes(privateKey.toString.rjust(n_bytes*2, '0'))
+            puts a.size
+            drbg = DRBG::HMAC.new(a, 256, byteMessage)
             r, s, randSignPoint = 0, 0, nil
             while r == 0 or s == 0
-                randNum = Utils::RandomInteger.between(1, curve.n - 1)
+                randNum = drbg.generate(n_bytes)
                 randSignPoint = Math.multiply(curve.g, randNum, curve.n, curve.a, curve.p)
                 r = randSignPoint.x % curve.n
                 s = ((numberMessage + r * privateKey.secret) * (Math.inv(randNum, curve.n))) % curve.n
@@ -24,7 +28,7 @@ module EllipticCurve
         end
 
         def self.verify(message, signature, publicKey, hashfunc=nil)
-            if hashfunc.nil? then hashfunc = lambda{ |x| Digest::SHA256.digest(x) } end            
+            if hashfunc.nil? then hashfunc = lambda{ |x| Digest::SHA256.digest(x) } end
             byteMessage = hashfunc.call(message)
             numberMessage = Utils::Binary.numberFromByteString(byteMessage)
 

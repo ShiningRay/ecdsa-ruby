@@ -15,5 +15,13 @@ module EllipticCurve
         def isAtInfinity()
             return @y == 0
         end
+
+        def infinite?
+            @y == 0
+        end
+
+        def *(k)
+
+        end
     end
 end
